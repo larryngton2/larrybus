@@ -17,3 +17,12 @@ eventManager.unregister(clazz);
 ```java
 eventManager.call(new TestEvent());
 ```
+
+### Setting up an Event Target
+```java
+@EventTarget
+@EventPriority(-10) // optional, default priority is 0
+public void onTest(TestEvent event) {
+    doThings();
+}
+```

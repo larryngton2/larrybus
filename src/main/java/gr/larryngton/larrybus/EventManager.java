@@ -16,8 +16,8 @@ public class EventManager {
     private final Map<Class<?>, List<Listener>> dispatchCache = new ConcurrentHashMap<>();
 
     /***
-     *
-     * @param obj to be registered
+     * Registers a new event listener
+     * @param obj the class to register
      */
     public void register(Object obj) {
         dispatchCache.clear();
@@ -32,7 +32,7 @@ public class EventManager {
             EventPriority annotation = method.getAnnotation(EventPriority.class);
 
             try {
-                MethodHandle handle = MethodHandles.privateLookupIn(obj.getClass(), MethodHandles.lookup()).unreflect(method).bindTo(obj.getClass());
+                MethodHandle handle = MethodHandles.privateLookupIn(obj.getClass(), MethodHandles.lookup()).unreflect(method).bindTo(obj);
                 int priority = annotation != null ? annotation.value() : 0;
 
                 Listener listener = new Listener(obj, method, eventClass, priority, handle);
@@ -49,6 +49,10 @@ public class EventManager {
         }
     }
 
+    /***
+     * Unregisters a registered event listener
+     * @param obj the listener to unregister
+     */
     public void unregister(Object obj) {
         dispatchCache.clear();
         listenerMap.forEach((eventClass, listeners) -> {
@@ -60,6 +64,10 @@ public class EventManager {
         });
     }
 
+    /***
+     * Invokes all event listeners associated with the provided event
+     * @param event the event to call the registered methods for
+     */
     public Event call(Event event) {
         Class<?> eventClass = event.getClass();
         if (!dispatchCache.containsKey(eventClass)) {
