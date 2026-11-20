@@ -1,0 +1,81 @@
+package gr.larryngton.larrybus;
+
+import gr.larryngton.larrybus.annotations.EventPriority;
+import gr.larryngton.larrybus.annotations.EventTarget;
+import gr.larryngton.larrybus.impl.Event;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+public class EventManager {
+    private final Map<Class<? extends Event>, List<Listener>> listenerMap = new ConcurrentHashMap<>();
+    private final Map<Class<?>, List<Listener>> dispatchCache = new ConcurrentHashMap<>();
+
+    /***
+     *
+     * @param obj to be registered
+     */
+    public void register(Object obj) {
+        dispatchCache.clear();
+        for (Method method : obj.getClass().getDeclaredMethods()) {
+            if (!method.isAnnotationPresent(EventTarget.class)) {
+                continue;
+            }
+
+            Class<?> parameterType = method.getParameterTypes()[0];
+            Class<? extends Event> eventClass = (Class<? extends Event>) parameterType;
+
+            EventPriority annotation = method.getAnnotation(EventPriority.class);
+
+            try {
+                MethodHandle handle = MethodHandles.privateLookupIn(obj.getClass(), MethodHandles.lookup()).unreflect(method).bindTo(obj.getClass());
+                int priority = annotation != null ? annotation.value() : 0;
+
+                Listener listener = new Listener(obj, method, eventClass, priority, handle);
+                listenerMap.compute(eventClass, (_, listeners) -> {
+                    List<Listener> updated = listeners == null ? new ArrayList<>() : new ArrayList<>(listeners);
+                    updated.add(listener);
+                    updated.sort(Comparator.comparingInt(Listener::getPriority));
+
+                    return new CopyOnWriteArrayList<>(updated);
+                });
+            } catch (IllegalAccessException e) {
+                throw new IllegalArgumentException("Cannot access event listener: " + method, e);
+            }
+        }
+    }
+
+    public void unregister(Object obj) {
+        dispatchCache.clear();
+        listenerMap.forEach((eventClass, listeners) -> {
+            listeners.removeIf(listener -> listener.getOwner() == obj);
+
+            if (listeners.isEmpty()) {
+                listenerMap.remove(eventClass, listeners);
+            }
+        });
+    }
+
+    public Event call(Event event) {
+        Class<?> eventClass = event.getClass();
+        if (!dispatchCache.containsKey(eventClass)) {
+            listenerMap.forEach((registeredClass, listeners) -> {
+                if (registeredClass.isAssignableFrom(eventClass)) {
+                    dispatchCache.put(eventClass, listeners);
+                }
+            });
+        }
+
+        for (Listener listener : dispatchCache.getOrDefault(eventClass, new ArrayList<>())) {
+            try {
+                listener.getHandle().invoke(event);
+            } catch (Throwable ignored) {
+            }
+        }
+        return event;
+    }
+}

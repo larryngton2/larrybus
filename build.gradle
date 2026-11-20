@@ -1,0 +1,14 @@
+plugins {
+    id 'java'
+}
+
+group = 'gr.larryngton'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly("org.projectlombok:lombok:1.18.48")
+}
