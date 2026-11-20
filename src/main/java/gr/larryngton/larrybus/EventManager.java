@@ -26,7 +26,25 @@ public class EventManager {
                 continue;
             }
 
+            /*
+                 i was doing:
+
+                 @EventTarget
+                 public void onEnable() {
+                 }
+
+                 so i prob need this LOL
+             */
+            if (method.getParameterCount() != 1) {
+                throw new IllegalArgumentException("Event listener must have one parameter: " + method);
+            }
+
             Class<?> parameterType = method.getParameterTypes()[0];
+
+            if (!Event.class.isAssignableFrom(parameterType)) {
+                throw new IllegalArgumentException("Event listener parameter must extend Event: " + method);
+            }
+
             Class<? extends Event> eventClass = (Class<? extends Event>) parameterType;
 
             EventPriority annotation = method.getAnnotation(EventPriority.class);
