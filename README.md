@@ -26,3 +26,11 @@ public void onTest(TestEvent event) {
     doThings();
 }
 ```
+
+### About Performance
+- Without an event manager: ~2 nanos per call
+- With larrybus event manager: ~19 nanos per event call
+- With cubk event manager: ~40 nanos per event call
+- ~16 nanos slower than with no event manager
+- ~21 nanos faster than cubk <br>
+  (10.000 samples, 1.000 calls per sample)
