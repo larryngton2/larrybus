@@ -114,7 +114,7 @@ public class EventManager {
                 listener.getHandle().invoke(event);
             } catch (Throwable e) {
                 if (printExceptions) {
-                    e.getCause().printStackTrace();
+                    e.printStackTrace();
                 }
             }
         }
