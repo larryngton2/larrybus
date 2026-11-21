@@ -3,6 +3,8 @@ package gr.larryngton.larrybus;
 import gr.larryngton.larrybus.annotations.EventPriority;
 import gr.larryngton.larrybus.annotations.EventTarget;
 import gr.larryngton.larrybus.impl.Event;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -14,6 +16,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class EventManager {
     private final Map<Class<? extends Event>, List<Listener>> listenerMap = new ConcurrentHashMap<>();
     private final Map<Class<?>, List<Listener>> dispatchCache = new ConcurrentHashMap<>();
+    @Getter
+    @Setter
+    private boolean printExceptions = false;
+
+    public EventManager() {
+    }
+
+    public EventManager(boolean printExceptions) {
+        this.printExceptions = printExceptions;
+    }
 
     /***
      * Registers a new event listener
@@ -96,10 +108,14 @@ public class EventManager {
             });
         }
 
+        boolean printExceptions = this.printExceptions;
         for (Listener listener : dispatchCache.getOrDefault(eventClass, new ArrayList<>())) {
             try {
                 listener.getHandle().invoke(event);
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                if (printExceptions) {
+                    e.getCause().printStackTrace();
+                }
             }
         }
         return event;
