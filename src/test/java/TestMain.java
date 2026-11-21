@@ -8,8 +8,8 @@ import java.util.List;
 
 public class TestMain {
     static void main() {
-        int totalSamples = 10000;
-        int perEventSamples = 1000;
+        int totalSamples = 100000;
+        int perEventSamples = 10000;
 
         List<Long> samples = new ArrayList<>();
         List<Long> eventSamples = new ArrayList<>();
